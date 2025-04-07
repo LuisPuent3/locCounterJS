@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contador LOC - Analizador de Código JavaScript</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body class="sidebar-hidden">
+  <div class="app-container">
+    <header class="app-header">
+      <div class="app-header-content">
+        <h1>Contador LOC - Analizador de Código JavaScript</h1>
+        <p>Identifica clases, métodos y cuenta las líneas de código</p>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <main class="main-panel" id="main-panel">
+        <div class="file-upload" id="upload-section">
+          <h2>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            Selecciona un archivo JavaScript
+          </h2>
+          
+          <label for="jsFile" class="file-upload-container" id="dropArea">
+            <svg class="file-upload-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <p>Arrastra y suelta un archivo JavaScript aquí o haz clic para seleccionarlo</p>
+            <p class="file-upload-help">Formatos soportados: .js</p>
+            <p class="file-name" id="fileName"></p>
+            <input type="file" id="jsFile" class="file-input" accept=".js">
+          </label>
+          
+          <div class="button-group">
+            <button id="analyzeBtn" class="btn btn-primary btn-lg pulse-animation" disabled>
+              <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                <polyline points="16 7 22 7 22 13"></polyline>
+              </svg>
+              Analizar Código
+            </button>
+          </div>
+        </div>
+
+        <div id="results-container">
+          <div id="loadingResults" class="loading" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Analizando archivo...</p>
+          </div>
+          
+          <div id="errorResults" class="error-message" style="display: none;"></div>
+          
+          <div id="emptyResults" class="results-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+              <line x1="7" y1="8" x2="10" y2="8"></line>
+              <line x1="14" y1="8" x2="17" y2="8"></line>
+              <line x1="7" y1="12" x2="17" y2="12"></line>
+            </svg>
+            <p>Aún no hay resultados. Sube un archivo JavaScript y haz clic en "Analizar Código".</p>
+          </div>
+          
+          <div id="resultsContent" style="display: none;"></div>
+        </div>
+      </main>
+
+      <!-- Panel lateral para detalles y exportación -->
+      <aside class="sidebar-panel">
+        <div class="sidebar-header">
+          <h3 class="sidebar-title">Detalles del Análisis</h3>
+          <button class="close-sidebar" id="closeSidebar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="sidebar-section">
+          <h4 class="sidebar-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            Información del Archivo
+          </h4>
+          <div id="sidebarSummary">
+            <!-- Se llenará dinámicamente -->
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h4 class="sidebar-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Estadísticas
+          </h4>
+          <div id="sidebarStats">
+            <!-- Se llenará dinámicamente -->
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h4 class="sidebar-section-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Exportar Resultados
+          </h4>
+          <div class="export-options">
+            <div id="exportJsonBtn" class="export-btn export-json">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <polyline points="16 13 8 13"></polyline>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              Exportar como JSON
+            </div>
+            <div id="exportCsvBtn" class="export-btn export-csv">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              Exportar como CSV
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Botón de modo oscuro -->
+  <div class="theme-toggle" id="themeToggle">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </div>
+
+  <script src="/js/client.js"></script>
+  <script>
+    // Funcionalidad adicional para arrastrar y soltar
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('jsFile');
+    const fileName = document.getElementById('fileName');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+
+    // Prevenir comportamiento por defecto
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Destacar el área al arrastrar
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+      dropArea.classList.add('highlight');
+    }
+
+    function unhighlight() {
+      dropArea.classList.remove('highlight');
+    }
+
+    // Manejar el evento drop
+    dropArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      fileInput.files = files;
+      updateFileName();
+    }
+
+    // Actualizar el nombre del archivo seleccionado
+    fileInput.addEventListener('change', updateFileName);
+
+    function updateFileName() {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+        analyzeBtn.disabled = false;
+        analyzeBtn.classList.add('pulse-animation');
+      } else {
+        fileName.textContent = '';
+        analyzeBtn.disabled = true;
+        analyzeBtn.classList.remove('pulse-animation');
+      }
+    }
+
+    // Cerrar sidebar
+    document.getElementById('closeSidebar').addEventListener('click', () => {
+      document.body.classList.add('sidebar-hidden');
+    });
+
+    // Alternar modo oscuro
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      
+      // Cambiar ícono según el modo
+      const themeIcon = document.querySelector('#themeToggle svg');
+      if (document.body.classList.contains('dark-mode')) {
+        themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+      } else {
+        themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+      }
+    });
+  </script>
+</body>
+</html>
